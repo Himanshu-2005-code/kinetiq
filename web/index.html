@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kinetiq: a form coach in your browser tab</title>
+  <meta name="description" content="Kinetiq counts your reps and checks your form from your laptop camera. Video never leaves your device." />
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap bar">
+      <a class="brand" href="./">Kinet<span>i</span>q</a>
+      <nav aria-label="Main">
+        <a href="#how">How it works</a>
+        <a href="#moves">Exercises</a>
+        <a href="#private">Privacy</a>
+        <a class="keep" href="https://github.com/Himanshu-2005-code/kinetiq">GitHub</a>
+      </nav>
+    </div>
+    <div class="wrap hero-grid">
+      <div>
+        <h1>A form coach that lives in your browser tab.</h1>
+        <p class="lede">Prop up your laptop, start a set, and Kinetiq counts every rep. It tells you the moment your squat gets shallow or your hips start to sag.</p>
+        <div class="actions">
+          <a class="btn" href="./app.html">Try it with your camera</a>
+          <a class="btn ghost" href="#how">See how it works</a>
+        </div>
+      </div>
+      <figure class="court" aria-label="Animated skeleton doing squats while the rep counter goes up">
+        <canvas id="hero-canvas" width="880" height="748"></canvas>
+        <div class="scoreboard" aria-live="off"><div class="n" id="hero-reps">0</div><div class="what">squats</div></div>
+        <figcaption class="caption">What Kinetiq sees: 13 joints, tracked 30 times a second.</figcaption>
+      </figure>
+    </div>
+  </header>
+
+  <main>
+    <section class="band" id="how">
+      <div class="wrap">
+        <h2>From camera to coaching in three steps</h2>
+        <p class="section-intro">Every step runs on your own device. Nothing is installed, and nothing is uploaded.</p>
+        <ol class="pipeline">
+          <li><h3>Your camera sees you</h3><p>Open the page and allow camera access. Any laptop webcam or phone camera works. Stand where your whole body is in frame.</p></li>
+          <li><h3>Pose tracking finds your joints</h3><p>A lightweight pose model marks your shoulders, elbows, wrists, hips, knees and ankles on every frame.</p></li>
+          <li><h3>The motion model reads your movement</h3><p>Kinetiq's transformer watches the last two seconds of motion. It names the exercise, tracks where you are in each rep, and spots form faults.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="band" id="moves" style="padding-top:0">
+      <div class="wrap">
+        <h2>What it coaches today</h2>
+        <p class="section-intro">Kinetiq recognises the exercise on its own. Just start moving.</p>
+        <table class="moves">
+          <thead><tr><th scope="col">Exercise</th><th scope="col">What it watches for</th></tr></thead>
+          <tbody>
+            <tr><td>Squats</td><td>Depth that stops short of parallel, and a chest that folds forward.</td></tr>
+            <tr><td>Push-ups</td><td>Half reps, hips sagging toward the floor, and hips piking up.</td></tr>
+            <tr><td>Lunges</td><td>A back knee that never gets low, and leaning over the front leg.</td></tr>
+            <tr><td>Jumping jacks</td><td>Arms that stop at shoulder height instead of going overhead.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="band private" id="private">
+      <div class="wrap cols">
+        <div>
+          <h2>Your video never leaves your device</h2>
+          <p>Both models run inside the browser with WebAssembly. Kinetiq has no server that receives frames, so there is nothing to store, leak or sell. You can switch off your Wi-Fi after the page loads and it keeps counting.</p>
+        </div>
+        <dl>
+          <dt>0</dt><dd>frames uploaded</dd>
+          <dt>3.5 MB</dt><dd>motion model, downloaded once</dd>
+          <dt>~5 ms</dt><dd>to analyse two seconds of movement on a laptop</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="band closing">
+      <div class="wrap row">
+        <h2 style="margin:0">Ready for a set?</h2>
+        <div class="actions">
+          <a class="btn" href="./app.html">Start a set</a>
+          <a class="btn ghost" href="https://github.com/Himanshu-2005-code/kinetiq">Read the code</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap">Kinetiq is built by Himanshu. Kinetiq is not a medical device. Stop if anything hurts.</div></footer>
+  <script type="module" src="./src/hero.ts"></script>
+</body>
+</html>

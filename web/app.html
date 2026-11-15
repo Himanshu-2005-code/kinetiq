@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kinetiq live coach</title>
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body class="app">
+  <div class="wrap bar">
+    <a class="brand" href="./">Kinet<span>i</span>q</a>
+    <nav aria-label="Main"><a class="keep" href="./">About Kinetiq</a></nav>
+  </div>
+  <main class="wrap stage">
+    <div class="viewport">
+      <video id="video" playsinline muted></video>
+      <canvas id="overlay"></canvas>
+      <div class="start" id="start">
+        <h1>Step back so your whole body is in frame</h1>
+        <p>Kinetiq needs to see you from head to ankles. Side-on works best for push-ups and lunges. Your video stays on this device.</p>
+        <div><button class="btn" id="start-btn">Turn on camera</button></div>
+        <div class="status" id="status" role="status"></div>
+      </div>
+    </div>
+    <aside class="panel" aria-live="polite">
+      <div class="card">
+        <p class="exercise-name" id="exercise">Waiting for you to start</p>
+        <div class="conf" id="conf">Start any supported exercise and Kinetiq will recognise it.</div>
+      </div>
+      <div class="card count">
+        <div class="n" id="reps">0</div>
+        <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
+          <circle class="track" cx="32" cy="32" r="27" />
+          <circle class="fill" id="ring" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6" />
+        </svg>
+        <div class="conf">reps</div>
+      </div>
+      <div class="card">
+        <ul class="cues" id="cues"><li class="ok">Form cues will show up here while you move.</li></ul>
+      </div>
+      <div class="card bars" id="bars"></div>
+      <div class="controls">
+        <button class="btn ghost" id="reset">Reset count</button>
+        <button class="btn ghost" id="record">Record a set</button>
+      </div>
+      <div class="meta" id="meta"></div>
+    </aside>
+  </main>
+  <script type="module" src="./src/app.ts"></script>
+</body>
+</html>

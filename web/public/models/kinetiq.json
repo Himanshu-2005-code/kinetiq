@@ -1,0 +1,69 @@
+{
+ "window": 64,
+ "joints": [
+  "nose",
+  "left_shoulder",
+  "right_shoulder",
+  "left_elbow",
+  "right_elbow",
+  "left_wrist",
+  "right_wrist",
+  "left_hip",
+  "right_hip",
+  "left_knee",
+  "right_knee",
+  "left_ankle",
+  "right_ankle"
+ ],
+ "mediapipe_indices": [
+  0,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28
+ ],
+ "exercises": [
+  "idle",
+  "squat",
+  "pushup",
+  "lunge",
+  "jumping_jack"
+ ],
+ "faults": [
+  "partial_range",
+  "forward_lean",
+  "hip_sag",
+  "hip_pike"
+ ],
+ "outputs": [
+  "exercise_probs",
+  "fault_probs",
+  "phase",
+  "active_probs"
+ ],
+ "metrics": {
+  "exercise_acc": 0.9956,
+  "acc/idle": 1.0,
+  "acc/squat": 0.9783,
+  "acc/pushup": 1.0,
+  "acc/lunge": 1.0,
+  "acc/jumping_jack": 1.0,
+  "f1/partial_range": 1.0,
+  "f1/forward_lean": 0.8,
+  "f1/hip_sag": 0.9955,
+  "f1/hip_pike": 1.0,
+  "fault_f1_macro": 0.9489,
+  "phase_mae_deg": 6.4955,
+  "active_acc": 0.9794,
+  "step": 500.0
+ },
+ "parity_max_abs_err": 4.410743713378906e-06
+}
