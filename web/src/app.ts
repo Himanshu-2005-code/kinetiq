@@ -80,28 +80,90 @@ function loop() {
   else requestAnimationFrame(loop);
 }
 
-$('start-btn').addEventListener('click', async () => {
-  const btn = $<HTMLButtonElement>('start-btn');
-  btn.disabled = true;
+// ---------- startup: load models immediately, camera on tap ----------
+const startBtn = $<HTMLButtonElement>('start-btn');
+const switchBtn = $<HTMLButtonElement>('switch');
+let facing: 'user' | 'environment' = 'user';
+let running = false;
+
+const setStatus = (m: string) => (statusEl.textContent = m);
+const ready = engine.load('./models/kinetiq.onnx', setStatus).then(
+  () => { setStatus('Ready. Tap the button and allow camera access.'); return true; },
+  (err) => { console.error(err); setStatus(`Kinetiq could not load its models: ${(err as Error).message}. Check your connection and reload.`); return false; },
+);
+
+function inAppBrowser(): string | null {
+  const ua = navigator.userAgent;
+  if (/Instagram/i.test(ua)) return 'Instagram';
+  if (/FBAN|FBAV|FB_IAB/i.test(ua)) return 'Facebook';
+  if (/WhatsApp/i.test(ua)) return 'WhatsApp';
+  if (/Snapchat|Line\/|LinkedInApp|Twitter/i.test(ua)) return 'this app';
+  if (/; wv\)/.test(ua)) return 'this app';
+  return null;
+}
+
+async function openCamera(): Promise<MediaStream> {
+  // Phones reject over-specific constraints, so try progressively simpler ones.
+  const attempts: MediaStreamConstraints[] = [
+    { video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
+    { video: { facingMode: facing }, audio: false },
+    { video: true, audio: false },
+  ];
+  let last: unknown;
+  for (const c of attempts) {
+    try { return await navigator.mediaDevices.getUserMedia(c); } catch (e) {
+      last = e;
+      if ((e as DOMException).name === 'NotAllowedError') throw e; // permission denied: don't retry
+    }
+  }
+  throw last;
+}
+
+function cameraError(e: DOMException): string {
+  switch (e.name) {
+    case 'NotAllowedError': return 'Camera access was blocked. Allow the camera for this site in your browser settings, then reload the page.';
+    case 'NotFoundError': case 'OverconstrainedError': return 'No usable camera was found on this device.';
+    case 'NotReadableError': return 'Another app is using the camera. Close it, then try again.';
+    default: return `The camera could not start: ${e.message || e.name}`;
+  }
+}
+
+async function start() {
+  const app = inAppBrowser();
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    setStatus(app
+      ? `${app}'s built-in browser can't use the camera. Open this page in Chrome or Safari instead (tap the ⋯ menu, then "Open in browser").`
+      : 'This browser does not allow camera access here. Open the page over https in Chrome, Safari or Firefox.');
+    return;
+  }
+  startBtn.disabled = true;
   try {
-    statusEl.textContent = 'Asking for camera access';
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: { ideal: 960 }, height: { ideal: 720 }, facingMode: 'user' }, audio: false,
-    });
+    setStatus('Asking for camera access');
+    const old = video.srcObject as MediaStream | null;
+    old?.getTracks().forEach((t) => t.stop());
+    const stream = await openCamera();
     video.srcObject = stream;
     await video.play();
-    await engine.load('./models/kinetiq.onnx', (m) => (statusEl.textContent = m));
-    $('start').remove();
-    loop();
+    document.querySelector<HTMLElement>('.viewport')!.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+    video.classList.toggle('rear', facing === 'environment');
+    overlay.classList.toggle('rear', facing === 'environment');
+    const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+    switchBtn.hidden = cams.length < 2;
+    if (!(await ready)) { startBtn.disabled = false; return; }
+    $('start')?.remove();
+    if (!running) { running = true; loop(); }
   } catch (err) {
-    btn.disabled = false;
-    const e = err as DOMException;
-    statusEl.textContent = e.name === 'NotAllowedError'
-      ? 'Camera access was blocked. Allow the camera in your browser settings, then try again.'
-      : e.name === 'NotFoundError'
-        ? 'No camera found. Connect a webcam and try again.'
-        : `Kinetiq could not start: ${e.message}`;
+    console.error(err);
+    startBtn.disabled = false;
+    setStatus(cameraError(err as DOMException));
   }
+}
+
+startBtn.addEventListener('click', start);
+switchBtn.addEventListener('click', async () => {
+  facing = facing === 'user' ? 'environment' : 'user';
+  engine.resetCount();
+  await start();
 });
 
 $('reset').addEventListener('click', () => engine.resetCount());

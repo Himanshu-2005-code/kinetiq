@@ -61,13 +61,20 @@ export class Engine {
     const fileset = await FilesetResolver.forVisionTasks(
       `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/wasm`,
     );
-    this.pose = await PoseLandmarker.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: POSE_MODEL, delegate: 'GPU' },
+    // Many phones expose WebGL but fail to run the GPU delegate, so fall back to CPU.
+    const make = (delegate: 'GPU' | 'CPU') => PoseLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: POSE_MODEL, delegate },
       runningMode: 'VIDEO',
       numPoses: 1,
     });
+    try {
+      this.pose = await make('GPU');
+    } catch (err) {
+      console.warn('GPU pose delegate failed, using CPU', err);
+      this.pose = await make('CPU');
+    }
     onStatus('Loading form model');
-    ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ort.env.versions.web}/dist/`;
+    // The WASM runtime is bundled by Vite and served from our own origin.
     ort.env.wasm.numThreads = 1; // no cross-origin isolation needed on static hosts
     this.session = await ort.InferenceSession.create(modelUrl, { executionProviders: ['wasm'] });
   }

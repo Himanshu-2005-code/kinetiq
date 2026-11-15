@@ -13,13 +13,13 @@
   </div>
   <main class="wrap stage">
     <div class="viewport">
-      <video id="video" playsinline muted></video>
+      <video id="video" playsinline muted autoplay></video>
       <canvas id="overlay"></canvas>
       <div class="start" id="start">
         <h1>Step back so your whole body is in frame</h1>
         <p>Kinetiq needs to see you from head to ankles. Side-on works best for push-ups and lunges. Your video stays on this device.</p>
         <div><button class="btn" id="start-btn">Turn on camera</button></div>
-        <div class="status" id="status" role="status"></div>
+        <div class="status" id="status" role="status">Loading</div>
       </div>
     </div>
     <aside class="panel" aria-live="polite">
@@ -41,6 +41,7 @@
       <div class="card bars" id="bars"></div>
       <div class="controls">
         <button class="btn ghost" id="reset">Reset count</button>
+        <button class="btn ghost" id="switch" hidden>Switch camera</button>
         <button class="btn ghost" id="record">Record a set</button>
       </div>
       <div class="meta" id="meta"></div>
