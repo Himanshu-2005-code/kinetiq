@@ -169,14 +169,39 @@ select {
 .hud { display: none; }
 body.focus { overflow: hidden; }
 body.focus .viewport {
-  position: fixed; inset: 0; z-index: 10; max-height: none; aspect-ratio: auto !important;
+  position: fixed; inset: 0; z-index: 10; max-height: none; aspect-ratio: auto !important; width: 100vw; height: 100dvh; margin: 0;
   border: 0; border-radius: 0; background: #000;
 }
 body.focus .hud {
-  display: flex; flex-direction: column; justify-content: space-between; position: absolute; inset: 0;
+  display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 100%; flex-direction: column; justify-content: space-between; position: absolute; inset: 0;
   padding: max(1rem, env(safe-area-inset-top)) 1rem max(1.25rem, env(safe-area-inset-bottom)); pointer-events: none;
 }
 .hud-top { display: flex; justify-content: space-between; align-items: center; font: 600 1.6rem/1 var(--display); text-shadow: 0 2px 6px #000; }
 .hud-top .btn { pointer-events: auto; font-size: 1rem; padding: 0.5rem 0.8rem; background: rgba(10, 43, 48, 0.8); }
 .hud-reps { font: 700 clamp(6rem, 28vw, 14rem)/0.85 var(--display); color: var(--line); text-shadow: 0 4px 16px #000; font-variant-numeric: tabular-nums; }
 .hud-cue { align-self: stretch; font-size: 1.25rem; font-weight: 600; padding: 0.8rem 1rem; background: rgba(255, 90, 78, 0.92); color: #fff; border-radius: 4px; }
+
+/* exercise switcher */
+.modes { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.modes button {
+  font: 600 1.05rem/1 var(--display); letter-spacing: 0.02em; color: var(--chalk); cursor: pointer;
+  background: transparent; border: 2px solid var(--court-line); border-radius: 999px; padding: 0.55rem 0.9rem;
+}
+.modes button[aria-checked="true"] { background: var(--line); border-color: var(--line); color: var(--court-deep); }
+.controls.primary .btn { flex: 1; justify-content: center; font-size: 1.25rem; padding: 0.85rem 1rem; }
+
+/* session tally */
+.tally-title { margin: 0 0 0.5rem; font: 600 1.2rem var(--display); }
+.tally dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 0.3rem 1rem; }
+.tally dt { color: var(--mist); }
+.tally dd { margin: 0; font: 700 1.3rem/1.1 var(--display); color: var(--chalk); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* full-screen HUD additions */
+.hud-ex { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75vw;
+  pointer-events: auto; cursor: pointer; font: 600 1.4rem/1 var(--display); color: var(--chalk);
+  background: rgba(10, 43, 48, 0.75); border: 2px solid var(--court-line); border-radius: 999px; padding: 0.5rem 0.9rem;
+}
+.hud-mid { align-self: end; }
+.hud-state { font: 600 1.8rem/1 var(--display); color: var(--chalk); text-shadow: 0 2px 8px #000; margin-top: 0.4rem; }
+.hud-bottom { display: grid; gap: 0.75rem; }
+.hud-pause { pointer-events: auto; justify-content: center; font-size: 1.6rem; padding: 1rem; }

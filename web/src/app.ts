@@ -1,4 +1,4 @@
-import { Engine, Frame } from './engine';
+import { COUNTED, Engine, Frame, Mode } from './engine';
 import { BONES, EXERCISES, EXERCISE_LABEL, cue } from './skeleton';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -16,6 +16,44 @@ const barEls = EXERCISES.map((ex) => {
   row.innerHTML = `<span>${ex === 'idle' ? 'Not exercising' : EXERCISE_LABEL[ex]}</span><i></i>`;
   bars.appendChild(row);
   return row.querySelector('i') as HTMLElement;
+});
+
+// Session tally, one row per exercise.
+const tallyEls = Object.fromEntries(COUNTED.map((ex) => {
+  const dt = document.createElement('dt');
+  dt.textContent = EXERCISE_LABEL[ex];
+  const dd = document.createElement('dd');
+  dd.textContent = '0';
+  $('tally').append(dt, dd);
+  return [ex, dd];
+})) as Record<(typeof COUNTED)[number], HTMLElement>;
+
+// Exercise switcher.
+const modeBtns = [...document.querySelectorAll<HTMLButtonElement>('.modes button')];
+function setMode(mode: Mode) {
+  engine.setMode(mode);
+  modeBtns.forEach((b) => b.setAttribute('aria-checked', String(b.dataset.mode === mode)));
+  render();
+}
+modeBtns.forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode as Mode)));
+
+// Pause / resume for breaks.
+const pauseBtns = [$<HTMLButtonElement>('pause'), $<HTMLButtonElement>('hud-pause')];
+function togglePause() {
+  engine.setPaused(!engine.paused);
+  render();
+}
+pauseBtns.forEach((b) => b.addEventListener('click', togglePause));
+// In full screen, tapping the exercise name cycles Auto → Squats → … so you never leave the view.
+$('hud-ex').addEventListener('click', () => {
+  const order: Mode[] = ['auto', ...COUNTED];
+  setMode(order[(order.indexOf(engine.mode) + 1) % order.length]);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space' && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement)) {
+    e.preventDefault();
+    togglePause();
+  }
 });
 
 function drawSkeleton(frame: Frame, faulty: boolean) {
@@ -45,13 +83,21 @@ function drawSkeleton(frame: Frame, faulty: boolean) {
 let lastCues = '';
 function render() {
   const s = engine.state;
-  $('exercise').textContent = EXERCISE_LABEL[s.exercise];
-  $('conf').textContent = s.exercise === 'idle'
-    ? 'Start any supported exercise and Kinetiq will recognise it.'
-    : `${Math.round(s.confidence * 100)}% sure`;
+  $('exercise').textContent = s.exercise === 'idle' ? 'Start any exercise' : EXERCISE_LABEL[s.exercise];
+  const note = s.paused ? 'Paused. Your counts are kept. Tap Resume when you are ready.'
+    : !s.present ? 'Nobody in frame. Counting is on hold and your counts are kept.'
+    : s.mode === 'auto'
+      ? (s.exercise === 'idle' ? 'Auto mode recognises the exercise once you start moving.'
+        : `Auto mode, ${Math.round(s.confidence * 100)}% sure`)
+      : `Counting ${EXERCISE_LABEL[s.mode].toLowerCase()} only`;
+  $('conf').textContent = note;
+  $('hud-state').textContent = s.paused ? 'Paused' : !s.present ? 'Step into frame' : '';
+  for (const ex of COUNTED) tallyEls[ex].textContent = String(s.counts[ex]);
+  pauseBtns.forEach((b) => (b.textContent = s.paused ? 'Resume' : 'Pause'));
   $('reps').textContent = String(s.reps);
   $('hud-reps').textContent = String(s.reps);
-  $('hud-ex').textContent = s.exercise === 'idle' ? 'Start moving' : EXERCISE_LABEL[s.exercise];
+  $('hud-ex').textContent = (s.mode === 'auto' ? 'Auto: ' : '')
+    + (s.exercise === 'idle' ? 'start moving' : EXERCISE_LABEL[s.exercise]) + ' ⇄';
   const hudCue = $('hud-cue');
   const firstFault = s.activeFaults[0];
   hudCue.textContent = firstFault ? cue(s.exercise, firstFault) : '';
@@ -189,7 +235,6 @@ async function listCameras(stream: MediaStream) {
 
 startBtn.addEventListener('click', start);
 cameraSel.addEventListener('change', async () => {
-  engine.resetCount();
   if (video.srcObject) await start();
 });
 mirrorBox.addEventListener('change', () => { mirrorTouched = true; applyMirror(); });
@@ -210,7 +255,8 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setFocus(f
 
 if (isPhone) cameraSel.value = 'environment';
 
-$('reset').addEventListener('click', () => engine.resetCount());
+$('reset').addEventListener('click', () => { engine.resetCurrent(); render(); });
+$('new-session').addEventListener('click', () => { engine.resetAll(); render(); });
 
 // Record a set of raw landmarks for building a real-world fine-tuning set (see ml/README).
 $('record').addEventListener('click', () => {
