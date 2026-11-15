@@ -50,20 +50,20 @@
   "active_probs"
  ],
  "metrics": {
-  "exercise_acc": 0.9956,
+  "exercise_acc": 1.0,
   "acc/idle": 1.0,
-  "acc/squat": 0.9783,
+  "acc/squat": 1.0,
   "acc/pushup": 1.0,
   "acc/lunge": 1.0,
   "acc/jumping_jack": 1.0,
   "f1/partial_range": 1.0,
-  "f1/forward_lean": 0.8,
-  "f1/hip_sag": 0.9955,
+  "f1/forward_lean": 0.9939,
+  "f1/hip_sag": 1.0,
   "f1/hip_pike": 1.0,
-  "fault_f1_macro": 0.9489,
-  "phase_mae_deg": 6.4955,
-  "active_acc": 0.9794,
-  "step": 500.0
+  "fault_f1_macro": 0.9985,
+  "phase_mae_deg": 3.0592,
+  "active_acc": 0.9932,
+  "step": 3000.0
  },
- "parity_max_abs_err": 4.410743713378906e-06
+ "parity_max_abs_err": 2.5033950805664062e-06
 }
