@@ -23,9 +23,9 @@ function drawSkeleton(frame: Frame, faulty: boolean) {
   const H = (overlay.height = overlay.clientHeight * devicePixelRatio);
   ctx.clearRect(0, 0, W, H);
   if (!frame.raw) return;
-  // Match the video's object-fit: cover.
+  // Match the video's object-fit: contain (the whole camera frame is always visible).
   const vw = video.videoWidth, vh = video.videoHeight;
-  const s = Math.max(W / vw, H / vh);
+  const s = Math.min(W / vw, H / vh);
   const ox = (W - vw * s) / 2, oy = (H - vh * s) / 2;
   const P = (j: number) => [ox + frame.raw![j].x * vw * s, oy + frame.raw![j].y * vh * s];
   ctx.lineCap = 'round';
@@ -50,6 +50,12 @@ function render() {
     ? 'Start any supported exercise and Kinetiq will recognise it.'
     : `${Math.round(s.confidence * 100)}% sure`;
   $('reps').textContent = String(s.reps);
+  $('hud-reps').textContent = String(s.reps);
+  $('hud-ex').textContent = s.exercise === 'idle' ? 'Start moving' : EXERCISE_LABEL[s.exercise];
+  const hudCue = $('hud-cue');
+  const firstFault = s.activeFaults[0];
+  hudCue.textContent = firstFault ? cue(s.exercise, firstFault) : '';
+  hudCue.hidden = !firstFault;
   $('ring').setAttribute('stroke-dashoffset', String(169.6 * (1 - (s.active ? s.repProgress : 0))));
   s.exerciseProbs.forEach((p, i) => (barEls[i].style.transform = `scaleX(${p.toFixed(3)})`));
   const cues = s.activeFaults.map((f) => cue(s.exercise, f));
@@ -82,9 +88,14 @@ function loop() {
 
 // ---------- startup: load models immediately, camera on tap ----------
 const startBtn = $<HTMLButtonElement>('start-btn');
-const switchBtn = $<HTMLButtonElement>('switch');
-let facing: 'user' | 'environment' = 'user';
+const viewport = document.querySelector<HTMLElement>('.viewport')!;
+const cameraSel = $<HTMLSelectElement>('camera');
+const mirrorBox = $<HTMLInputElement>('mirror');
+const isPhone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 let running = false;
+let mirrorTouched = false;
+
+function applyMirror() { viewport.classList.toggle('mirror', mirrorBox.checked); }
 
 const setStatus = (m: string) => (statusEl.textContent = m);
 const ready = engine.load('./models/kinetiq.onnx', setStatus).then(
@@ -104,9 +115,12 @@ function inAppBrowser(): string | null {
 
 async function openCamera(): Promise<MediaStream> {
   // Phones reject over-specific constraints, so try progressively simpler ones.
+  const v = cameraSel.value;
+  const pick: MediaTrackConstraints = v === 'user' || v === 'environment'
+    ? { facingMode: { ideal: v } } : { deviceId: { exact: v } };
   const attempts: MediaStreamConstraints[] = [
-    { video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
-    { video: { facingMode: facing }, audio: false },
+    { video: { ...pick, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+    { video: pick, audio: false },
     { video: true, audio: false },
   ];
   let last: unknown;
@@ -144,12 +158,14 @@ async function start() {
     const stream = await openCamera();
     video.srcObject = stream;
     await video.play();
-    document.querySelector<HTMLElement>('.viewport')!.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
-    video.classList.toggle('rear', facing === 'environment');
-    overlay.classList.toggle('rear', facing === 'environment');
-    const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
-    switchBtn.hidden = cams.length < 2;
+    viewport.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+    // Mirror the front camera by default (feels natural), never the back camera.
+    const facingNow = stream.getVideoTracks()[0]?.getSettings().facingMode;
+    if (!mirrorTouched) mirrorBox.checked = facingNow ? facingNow === 'user' : cameraSel.value === 'user';
+    applyMirror();
+    await listCameras(stream);
     if (!(await ready)) { startBtn.disabled = false; return; }
+    $('camera-slot').appendChild(cameraSel); // camera picker lives in Settings once running
     $('start')?.remove();
     if (!running) { running = true; loop(); }
   } catch (err) {
@@ -159,12 +175,40 @@ async function start() {
   }
 }
 
+async function listCameras(stream: MediaStream) {
+  const cams = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'videoinput');
+  const current = stream.getVideoTracks()[0]?.getSettings().deviceId;
+  const keep = cameraSel.value;
+  cameraSel.innerHTML = '';
+  const add = (value: string, label: string) => cameraSel.add(new Option(label, value));
+  add('user', 'Front camera');
+  add('environment', 'Back camera');
+  cams.forEach((c, i) => c.deviceId && add(c.deviceId, c.label || `Camera ${i + 1}`));
+  cameraSel.value = [...cameraSel.options].some((o) => o.value === keep) ? keep : current ?? 'user';
+}
+
 startBtn.addEventListener('click', start);
-switchBtn.addEventListener('click', async () => {
-  facing = facing === 'user' ? 'environment' : 'user';
+cameraSel.addEventListener('change', async () => {
   engine.resetCount();
-  await start();
+  if (video.srcObject) await start();
 });
+mirrorBox.addEventListener('change', () => { mirrorTouched = true; applyMirror(); });
+
+// Full-screen focus mode: big video with reps and cues on top, readable from across the room.
+const fsBtn = $<HTMLButtonElement>('fullscreen');
+const exitBtn = $<HTMLButtonElement>('exit-focus');
+function setFocus(on: boolean) {
+  document.body.classList.toggle('focus', on);
+  fsBtn.textContent = on ? 'Exit full screen' : 'Full screen';
+  if (on) document.documentElement.requestFullscreen?.().catch(() => { /* iOS: CSS-only mode */ });
+  else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+fsBtn.addEventListener('click', () => setFocus(!document.body.classList.contains('focus')));
+exitBtn.addEventListener('click', () => setFocus(false));
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setFocus(false); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setFocus(false); });
+
+if (isPhone) cameraSel.value = 'environment';
 
 $('reset').addEventListener('click', () => engine.resetCount());
 

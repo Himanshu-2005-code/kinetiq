@@ -15,9 +15,17 @@
     <div class="viewport">
       <video id="video" playsinline muted autoplay></video>
       <canvas id="overlay"></canvas>
+      <div class="hud" aria-hidden="true">
+        <div class="hud-top"><span id="hud-ex">Start moving</span><button class="btn ghost" id="exit-focus">Exit full screen</button></div>
+        <div class="hud-reps" id="hud-reps">0</div>
+        <div class="hud-cue" id="hud-cue" hidden></div>
+      </div>
       <div class="start" id="start">
         <h1>Step back so your whole body is in frame</h1>
         <p>Kinetiq needs to see you from head to ankles. Side-on works best for push-ups and lunges. Your video stays on this device.</p>
+        <div class="start-opts">
+          <label>Camera <select id="camera"><option value="user">Front camera</option><option value="environment">Back camera</option></select></label>
+        </div>
         <div><button class="btn" id="start-btn">Turn on camera</button></div>
         <div class="status" id="status" role="status">Loading</div>
       </div>
@@ -41,8 +49,12 @@
       <div class="card bars" id="bars"></div>
       <div class="controls">
         <button class="btn ghost" id="reset">Reset count</button>
-        <button class="btn ghost" id="switch" hidden>Switch camera</button>
+        <button class="btn ghost" id="fullscreen">Full screen</button>
         <button class="btn ghost" id="record">Record a set</button>
+      </div>
+      <div class="card settings">
+        <label>Camera <span id="camera-slot"></span></label>
+        <label class="check"><input type="checkbox" id="mirror" checked /> Mirror the view</label>
       </div>
       <div class="meta" id="meta"></div>
     </aside>
