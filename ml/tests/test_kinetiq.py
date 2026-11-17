@@ -107,3 +107,14 @@ def test_onnx_export_parity(tmp_path):
                 "config": {"model": SMALL.__dict__, "data": {"n_frames": 64}}}, ckpt)
     meta = export(str(ckpt), str(tmp_path / "m.onnx"))
     assert meta["parity_max_abs_err"] < 1e-4
+
+
+def test_break_session_holds_counts_while_away():
+    from kinetiq.evaluate import make_break_session, stream_session
+    rng = np.random.default_rng(0)
+    seq, present, truth = make_break_session(rng, "squat", gap=40, length=120)
+    assert seq.shape[0] == 280 and present.sum() == 240 and truth >= 1
+    assert (seq[~present][..., 2] == 0).all()
+    counts = stream_session(KinetiqModel(SMALL), seq, present)
+    assert set(counts) == set(EXERCISES[1:])
+    assert all(v >= 0 for v in counts.values())
