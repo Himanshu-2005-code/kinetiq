@@ -42,8 +42,19 @@ Synthetic held-out set (2,048 clips) and streaming rep counting on 60 unseen 12â
 | Activity (in-rep) accuracy | 99.3% |
 | Rep count, sessions exactly right | 93% |
 | Rep count, mean abs. error | 0.08 reps/session |
+| Sessions with a break between sets, exact count | 81% (13/16) |
+| Sessions with a break between sets, mean abs. error | 0.25 reps |
 
 These are numbers on synthetic data. Real-world accuracy has to be measured on recorded sets (see the roadmap).
+
+## Using the live coach
+
+- **Pick what to count.** *Auto* recognises the exercise by itself, or choose *Squats*, *Push-ups*, *Lunges* or *Jumping jacks* to count only that. Auto switches exercise only after about two seconds of confident detection, so a misread never steals your count.
+- **Take breaks.** *Pause* (or the Space key) stops counting and keeps every count. If you walk out of frame, counting holds by itself and picks up again when you return.
+- **Session tally.** Each exercise keeps its own count for the session. *Reset this exercise* clears one; *New session* clears all.
+- **Camera settings.** Choose the front or back camera (phones default to the back camera) and turn mirroring on or off. The whole camera frame is always shown, never cropped.
+- **Full screen.** A large rep count and form cue over the video, readable from a few metres away. Tap the exercise name to switch exercises without leaving full screen.
+- **Phones.** Prop the phone 2-3 m away in portrait. In-app browsers (Instagram, WhatsApp) block the camera, so open the link in Chrome or Safari.
 
 ## Repository layout
 
@@ -56,7 +67,7 @@ ml/
   kinetiq/reps.py        phase-unwrapping rep counter
   kinetiq/export.py      ONNX export + onnxruntime parity check
   configs/default.yaml
-  tests/                 13 tests: IK invariants, feature invariances, ONNX parity, counter
+  tests/                 14 tests: IK invariants, feature invariances, ONNX parity, counter, breaks
 web/
   index.html             landing page (hero replays a synthetic set, counted live)
   app.html               live coach
@@ -73,6 +84,7 @@ cd ml
 pip install -e '.[dev]'
 pytest -q
 python -m kinetiq.train --config configs/default.yaml
+python -m kinetiq.evaluate runs/default/best.pt   # streaming + break-session metrics
 python -m kinetiq.export runs/default/best.pt ../web/public/models/kinetiq.onnx
 
 # web
